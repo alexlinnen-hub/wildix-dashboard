@@ -66,29 +66,7 @@
   .page { padding: 28px; max-width: 1280px; margin: 0 auto; }
 
   /* ── Config banner ── */
-  .config-banner {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px 20px;
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-  .config-banner label { font-size: 12px; color: var(--muted); margin-right: 4px; }
-  .config-banner input {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text);
-    padding: 6px 10px;
-    font-size: 13px;
-    width: 260px;
-    font-family: monospace;
-  }
-  .config-banner input:focus { outline: none; border-color: var(--accent); }
+
   .btn {
     padding: 7px 16px;
     border-radius: 7px;
@@ -316,19 +294,7 @@
 
 <div class="page">
 
-  <!-- Config -->
-  <div class="config-banner">
-    <div>
-      <label>Supabase URL</label>
-      <input type="text" id="sb-url" placeholder="https://xxxx.supabase.co" />
-    </div>
-    <div>
-      <label>Anon key</label>
-      <input type="password" id="sb-key" placeholder="eyJ..." />
-    </div>
-    <button class="btn btn-primary" onclick="saveConfig()">Connect</button>
-    <span id="conn-status" style="font-size:12px;color:var(--muted)"></span>
-  </div>
+  <span id="conn-status" style="display:none"></span>
 
   <!-- Stats -->
   <div class="stats-row">
@@ -404,19 +370,9 @@
 
 <script>
 // ── Config ──────────────────────────────────────────────────
-let SB_URL = localStorage.getItem('wb_url') || '';
-let SB_KEY = localStorage.getItem('wb_key') || '';
-if (SB_URL) document.getElementById('sb-url').value = SB_URL;
-if (SB_KEY) document.getElementById('sb-key').value = SB_KEY;
-if (SB_URL && SB_KEY) loadData();
-
-function saveConfig() {
-  SB_URL = document.getElementById('sb-url').value.trim().replace(/\/$/, '');
-  SB_KEY = document.getElementById('sb-key').value.trim();
-  localStorage.setItem('wb_url', SB_URL);
-  localStorage.setItem('wb_key', SB_KEY);
-  loadData();
-}
+const SB_URL = 'https://xljwvmgyoijagwtdfevb.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsand2bWd5b2lqYWd3dGRmZXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MDI0MDIsImV4cCI6MjA5NzI3ODQwMn0.qm07AbOjXoaWlXOA-N3cxHBgPB2rEUGtxqPMMLC_2LE';
+loadData();
 
 // ── Supabase fetch ───────────────────────────────────────────
 async function query(path) {
