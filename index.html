@@ -275,9 +275,87 @@
   }
   .toast.show { opacity: 1; transform: translateY(0); }
   .toast.error { border-color: var(--danger); color: var(--danger); }
+
+  .login-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  .login-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 40px 36px;
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+  }
+  .login-logo {
+    width: 48px; height: 48px;
+    background: var(--accent);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 22px; color: #fff;
+    margin: 0 auto 20px;
+  }
+  .login-box h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.02em; }
+  .login-box p  { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+  .login-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 11px 14px;
+    font-size: 15px;
+    text-align: center;
+    letter-spacing: 0.1em;
+    margin-bottom: 14px;
+    transition: border-color 0.15s;
+  }
+  .login-input:focus { outline: none; border-color: var(--accent); }
+  .login-input.shake { animation: shake 0.35s ease; border-color: var(--danger); }
+  .login-btn {
+    width: 100%;
+    padding: 11px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .login-btn:hover { opacity: 0.85; }
+  .login-error { font-size: 12px; color: var(--danger); margin-top: 10px; min-height: 18px; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20%      { transform: translateX(-8px); }
+    40%      { transform: translateX(8px); }
+    60%      { transform: translateX(-6px); }
+    80%      { transform: translateX(6px); }
+  }
+
 </style>
 </head>
 <body>
+
+<!-- Login screen -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">W</div>
+    <h2>Wildix Alerts</h2>
+    <p>Enter the team password to continue</p>
+    <input class="login-input" type="password" id="login-input" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" onkeydown="if(event.key==='Enter')doLogin()" autofocus />
+    <button class="login-btn" onclick="doLogin()">Sign in</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
 
 <div class="topbar">
   <div class="topbar-left">
@@ -371,8 +449,10 @@
 <script>
 // ── Config ──────────────────────────────────────────────────
 const SB_URL = 'https://xljwvmgyoijagwtdfevb.supabase.co';
+// ── Login ──
+// ── Config ──────────────────────────────────────────────────
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhsand2bWd5b2lqYWd3dGRmZXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MDI0MDIsImV4cCI6MjA5NzI3ODQwMn0.qm07AbOjXoaWlXOA-N3cxHBgPB2rEUGtxqPMMLC_2LE';
-loadData();
+// loadData() is called after login
 
 // ── Supabase fetch ───────────────────────────────────────────
 async function query(path) {
@@ -582,8 +662,33 @@ function showToast(msg, err=false) {
   setTimeout(() => t.className = 'toast', 3200);
 }
 
+
+// ── Login ────────────────────────────────────────────────────
+const TEAM_PASSWORD = 'Wildix2024';
+function doLogin() {
+  const val = document.getElementById('login-input').value;
+  if (val === TEAM_PASSWORD) {
+    sessionStorage.setItem('wb_auth', '1');
+    document.getElementById('login-screen').style.display = 'none';
+    loadData();
+  } else {
+    const inp = document.getElementById('login-input');
+    inp.classList.remove('shake');
+    void inp.offsetWidth;
+    inp.classList.add('shake');
+    document.getElementById('login-error').textContent = 'Incorrect password';
+    inp.value = '';
+    setTimeout(() => inp.classList.remove('shake'), 400);
+  }
+}
+// Check session on load
+if (sessionStorage.getItem('wb_auth') === '1') {
+  document.getElementById('login-screen').style.display = 'none';
+  loadData();
+}
+
 // Auto-refresh every 5 min
-setInterval(loadData, 5 * 60 * 1000);
+setInterval(() => { if(sessionStorage.getItem("wb_auth")==="1") loadData(); }, 5 * 60 * 1000);
 </script>
 </body>
 </html>
