@@ -544,12 +544,12 @@ function renderTable(rows) {
         <div class="usage-bar"><div class="usage-fill ${cls}" style="width:${Math.min(pct,100)}%"></div></div>
         <span class="usage-pct">${pct}%</span>
       </div><div style="font-size:11px;color:var(--muted);margin-top:3px">${r.ai_hours_used}h of ${r.ai_hours_total}h</div>`;
-    } else if (r.alert_type === 'license_overuse' && r.license_used && r.license_available) {
-      const pct = Math.round((r.license_used / r.license_available) * 100);
+    } else if (r.alert_type === 'license_overuse' && r.license_used != null && r.license_available != null) {
+      const pct = r.license_available > 0 ? Math.round((r.license_used / r.license_available) * 100) : 100;
       const cls = pct >= 100 ? 'danger' : 'warn';
       usageHtml = `<div class="usage-bar-wrap">
         <div class="usage-bar"><div class="usage-fill ${cls}" style="width:${Math.min(pct,100)}%"></div></div>
-        <span class="usage-pct">${pct}%</span>
+        <span class="usage-pct">${r.license_available === 0 ? '∞' : pct + '%'}</span>
       </div><div style="font-size:11px;color:var(--muted);margin-top:3px">${r.license_used} used / ${r.license_available} available</div>`;
     }
 
