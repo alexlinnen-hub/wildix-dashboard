@@ -341,6 +341,120 @@
     80%      { transform: translateX(6px); }
   }
 
+  /* ── Tabs ── */
+  .tabbar {
+    display: flex;
+    gap: 4px;
+    padding: 10px 28px 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--font);
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── Bundle calculator ── */
+  .calc-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 20px;
+    align-items: start;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 860px) { .calc-grid { grid-template-columns: 1fr; } }
+  .calc-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+  }
+  .calc-field { margin-bottom: 18px; }
+  .calc-field:last-child { margin-bottom: 0; }
+  .calc-field label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .calc-input-row { display: flex; align-items: center; gap: 10px; }
+  .calc-field input[type="number"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 15px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-family: var(--font);
+  }
+  .calc-field input[type="number"]:focus { outline: none; border-color: var(--accent); }
+  .calc-unit { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .calc-field input[type="range"] { width: 100%; accent-color: var(--accent); margin-top: 8px; }
+  .calc-hint { color: var(--muted); font-size: 11px; margin-top: 6px; }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-top: 22px; margin-bottom: 14px; }
+  .toggle-row label { font-size: 13px; color: var(--text); font-weight: 500; }
+  .switch { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider-toggle {
+    position: absolute; inset: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .slider-toggle:before {
+    content: "";
+    position: absolute;
+    height: 16px; width: 16px;
+    left: 2px; top: 2px;
+    background: var(--muted);
+    border-radius: 50%;
+    transition: 0.15s;
+  }
+  .switch input:checked + .slider-toggle { background: rgba(108,99,255,0.25); border-color: var(--accent); }
+  .switch input:checked + .slider-toggle:before { transform: translateX(18px); background: var(--accent); }
+
+  .result-hero { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .result-hero .num { font-size: 44px; font-weight: 800; color: var(--boost); line-height: 1; }
+  .result-hero .label { font-size: 14px; color: var(--muted); font-weight: 500; }
+  .result-sub { color: var(--muted); font-size: 12.5px; margin-bottom: 18px; }
+
+  .calc-note {
+    display: flex;
+    gap: 8px;
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 14px;
+    font-size: 12px;
+    color: #f2c078;
+    line-height: 1.5;
+  }
+  .calc-note.included {
+    background: rgba(34,197,94,0.08);
+    border-color: rgba(34,197,94,0.3);
+    color: #86e0ab;
+  }
+  tr.active-tier td { color: var(--boost); font-weight: 600; }
+  tr.active-tier { background: rgba(168,85,247,0.06); }
+
 </style>
 </head>
 <body>
@@ -370,7 +484,14 @@
   </div>
 </div>
 
+<div class="tabbar">
+  <button class="tab-btn active" id="tab-btn-alerts" onclick="switchView('alerts')">Alerts</button>
+  <button class="tab-btn" id="tab-btn-calc" onclick="switchView('calc')">Bundle Calculator</button>
+</div>
+
 <div class="page">
+
+<div class="view active" id="view-alerts">
 
   <span id="conn-status" style="display:none"></span>
 
@@ -442,6 +563,84 @@
     <div class="history-head">Alert history</div>
     <div id="detail-history"></div>
   </div>
+
+</div><!-- /view-alerts -->
+
+<div class="view" id="view-calc">
+
+  <div class="section-head">
+    <h2>AI+Data Boost Bundle Calculator</h2>
+  </div>
+
+  <div class="calc-grid">
+    <div class="calc-card">
+      <div class="calc-field">
+        <label>Monthly talk time needed (transcription + Voice agent hours)</label>
+        <div class="calc-input-row">
+          <input type="number" id="hoursInput" min="0" step="1" value="60">
+          <span class="calc-unit">hours / month</span>
+        </div>
+        <input type="range" id="hoursSlider" min="0" max="500" step="1" value="60">
+        <div class="calc-hint">Included free of charge: 10 hours/month with no Bundle purchased.</div>
+      </div>
+
+      <div class="toggle-row">
+        <label>Also check against a storage (CDS) requirement</label>
+        <div class="switch">
+          <input type="checkbox" id="cdsToggle">
+          <span class="slider-toggle"></span>
+        </div>
+      </div>
+
+      <div class="calc-field" id="cdsField" style="display:none;">
+        <label>Company Data Storage needed</label>
+        <div class="calc-input-row">
+          <input type="number" id="cdsInput" min="0" step="1" value="0">
+          <span class="calc-unit">GB</span>
+        </div>
+        <div class="calc-hint">Included free of charge: 5GB with no Bundle purchased.</div>
+      </div>
+    </div>
+
+    <div class="calc-card">
+      <div class="result-hero">
+        <span class="num" id="bundleCount">0</span>
+        <span class="label">Bundle(s) needed</span>
+      </div>
+      <div class="result-sub" id="resultSub"></div>
+
+      <div class="stats-row" style="margin-bottom:0;">
+        <div class="stat-card">
+          <div class="stat-label">AI Hours Provided</div>
+          <div class="stat-value" id="hoursProvided" style="font-size:20px;color:var(--success)">10h</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">CDS Provided</div>
+          <div class="stat-value" id="cdsProvided" style="font-size:20px;color:var(--success)">5 GB</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">CDS Multiplier</div>
+          <div class="stat-value boost" id="multiplierUsed" style="font-size:20px">—</div>
+        </div>
+      </div>
+
+      <div id="noteBox"></div>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <h2>Bundle reference</h2>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Quantity of Bundles</th><th>CDS Multiplier</th><th>Total AI Hours</th><th>Total CDS</th></tr>
+      </thead>
+      <tbody id="refTable"></tbody>
+    </table>
+  </div>
+
+</div><!-- /view-calc -->
 
 </div>
 
@@ -664,6 +863,120 @@ function showToast(msg, err=false) {
   setTimeout(() => t.className = 'toast', 3200);
 }
 
+
+// ── Tabs ─────────────────────────────────────────────────────
+function switchView(name) {
+  document.getElementById('view-alerts').classList.toggle('active', name === 'alerts');
+  document.getElementById('view-calc').classList.toggle('active', name === 'calc');
+  document.getElementById('tab-btn-alerts').classList.toggle('active', name === 'alerts');
+  document.getElementById('tab-btn-calc').classList.toggle('active', name === 'calc');
+}
+
+// ── Bundle calculator ───────────────────────────────────────
+// Rules per AI+Data Boost Bundle Overview (effective 1 Mar 2026):
+//   Default (no Bundle): 10 AI hours + 5GB CDS
+//   1 Bundle:  25 AI hours + 10GB CDS
+//   2–3 Bundles:  CDS = bundles * 10GB * 2.5
+//   4–10 Bundles: CDS = bundles * 10GB * 12.5
+//   11+ Bundles:  CDS = bundles * 10GB * 45
+(function () {
+  const hoursInput = document.getElementById('hoursInput');
+  const hoursSlider = document.getElementById('hoursSlider');
+  const cdsToggle = document.getElementById('cdsToggle');
+  const cdsField = document.getElementById('cdsField');
+  const cdsInput = document.getElementById('cdsInput');
+  if (!hoursInput) return; // calculator markup not present
+
+  function cdsMultiplier(bundles) {
+    if (bundles <= 0) return null;
+    if (bundles === 1) return 1;
+    if (bundles <= 3) return 2.5;
+    if (bundles <= 10) return 12.5;
+    return 45;
+  }
+  function cdsForBundles(bundles) {
+    if (bundles <= 0) return 5;
+    return bundles * 10 * cdsMultiplier(bundles);
+  }
+  function hoursForBundles(bundles) {
+    if (bundles <= 0) return 10;
+    return bundles * 25;
+  }
+  function bundlesForHours(hours) {
+    if (hours <= 10) return 0;
+    return Math.ceil(hours / 25);
+  }
+  function bundlesForCDS(gb) {
+    if (gb <= 5) return 0;
+    let b = 1;
+    while (cdsForBundles(b) < gb && b < 2000) b++;
+    return b;
+  }
+
+  function renderCalc() {
+    const hoursNeeded = Math.max(0, parseFloat(hoursInput.value) || 0);
+    const cdsNeeded = cdsToggle.checked ? Math.max(0, parseFloat(cdsInput.value) || 0) : 0;
+
+    const byHours = bundlesForHours(hoursNeeded);
+    const byCds = cdsToggle.checked ? bundlesForCDS(cdsNeeded) : 0;
+    const bundles = Math.max(byHours, byCds);
+
+    document.getElementById('bundleCount').textContent = bundles;
+
+    const totalHours = hoursForBundles(bundles);
+    const totalCds = cdsForBundles(bundles);
+    const mult = cdsMultiplier(bundles);
+
+    document.getElementById('hoursProvided').textContent = totalHours + 'h';
+    document.getElementById('cdsProvided').textContent = (Number.isInteger(totalCds) ? totalCds : totalCds.toFixed(1)) + ' GB';
+    document.getElementById('multiplierUsed').textContent = mult ? mult + 'x' : '—';
+
+    let sub = '';
+    let noteHTML = '';
+    if (bundles === 0) {
+      sub = `${hoursNeeded}h/month fits within the free allowance — no Bundle required.`;
+      noteHTML = `<div class="calc-note included">✓ Covered by the default allowance (10 AI hours + 5GB CDS). No purchase needed.</div>`;
+    } else {
+      sub = `${hoursNeeded}h/month requires ${bundles} Bundle${bundles > 1 ? 's' : ''}` +
+        (cdsToggle.checked && byCds > byHours ? ` (driven by the ${cdsNeeded}GB storage requirement, not hours)` : '') + '.';
+      if (byCds > byHours && cdsToggle.checked) {
+        noteHTML = `<div class="calc-note">Storage requirement (${cdsNeeded}GB) needs more Bundles than the hours alone would — quoted on the higher figure.</div>`;
+      }
+    }
+    document.getElementById('resultSub').textContent = sub;
+    document.getElementById('noteBox').innerHTML = noteHTML;
+
+    buildRefTable(bundles);
+  }
+
+  function buildRefTable(activeBundles) {
+    const rows = [0, 1, 2, 3, 4, 6, 10, 11, 15, 20];
+    const tbody = document.getElementById('refTable');
+    tbody.innerHTML = rows.map(b => {
+      const mult = cdsMultiplier(b);
+      const hrs = hoursForBundles(b);
+      const cds = cdsForBundles(b);
+      const isActive = b === activeBundles;
+      const label = b === 0 ? 'No Bundle (default)' : b;
+      return `<tr class="${isActive ? 'active-tier' : ''}">
+        <td>${label}</td>
+        <td>${mult ? mult + 'x' : '—'}</td>
+        <td>${hrs}h</td>
+        <td>${Number.isInteger(cds) ? cds : cds.toFixed(1)} GB</td>
+      </tr>`;
+    }).join('');
+  }
+
+  hoursInput.addEventListener('input', () => { hoursSlider.value = hoursInput.value; renderCalc(); });
+  hoursSlider.addEventListener('input', () => { hoursInput.value = hoursSlider.value; renderCalc(); });
+  cdsToggle.addEventListener('change', () => {
+    cdsField.style.display = cdsToggle.checked ? 'block' : 'none';
+    renderCalc();
+  });
+  cdsInput.addEventListener('input', renderCalc);
+
+  renderCalc();
+})();
 
 // ── Login ────────────────────────────────────────────────────
 const TEAM_PASSWORD = 'Wildix2024';
