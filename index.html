@@ -510,7 +510,7 @@
       <div class="stat-value boost" id="stat-boost">—</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Avg AI hours overage</div>
+      <div class="stat-label">Avg AI units overage</div>
       <div class="stat-value danger" id="stat-overage">—</div>
     </div>
     <div class="stat-card">
@@ -575,14 +575,26 @@
   <div class="calc-grid">
     <div class="calc-card">
       <div class="calc-field">
-        <label>Monthly talk time needed (transcription + Voice agent hours)</label>
+        <label>Real-time hours (live call/conference transcription, Voice AI agents, voicemail)</label>
         <div class="calc-input-row">
-          <input type="number" id="hoursInput" min="0" step="1" value="60">
+          <input type="number" id="rtInput" min="0" step="1" value="20">
           <span class="calc-unit">hours / month</span>
         </div>
-        <input type="range" id="hoursSlider" min="0" max="500" step="1" value="60">
-        <div class="calc-hint">Included free of charge: 10 hours/month with no Bundle purchased.</div>
+        <input type="range" id="rtSlider" min="0" max="500" step="1" value="20">
+        <div class="calc-hint">1 hour = 1 AI unit. Voicemail transcription is always real-time.</div>
       </div>
+
+      <div class="calc-field">
+        <label>Post-call transcription hours (calls only)</label>
+        <div class="calc-input-row">
+          <input type="number" id="pcInput" min="0" step="1" value="40">
+          <span class="calc-unit">hours / month</span>
+        </div>
+        <input type="range" id="pcSlider" min="0" max="1000" step="1" value="40">
+        <div class="calc-hint">1 hour = 0.5 AI units (2 hours per unit). Needs WMS 7.08.20260625.1 or later.</div>
+      </div>
+
+      <div class="calc-hint">Included free of charge: 10 AI units/month and 5GB with no Bundle purchased. Each Bundle = 25 AI units. Unused units expire at month end.</div>
 
       <div class="toggle-row">
         <label>Also check against a storage (CDS) requirement</label>
@@ -611,8 +623,12 @@
 
       <div class="stats-row" style="margin-bottom:0;">
         <div class="stat-card">
-          <div class="stat-label">AI Hours Provided</div>
-          <div class="stat-value" id="hoursProvided" style="font-size:20px;color:var(--success)">10h</div>
+          <div class="stat-label">AI Units Needed</div>
+          <div class="stat-value" id="unitsNeeded" style="font-size:20px">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">AI Units Provided</div>
+          <div class="stat-value" id="hoursProvided" style="font-size:20px;color:var(--success)">10</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">CDS Provided</div>
@@ -634,7 +650,7 @@
   <div class="table-wrap">
     <table>
       <thead>
-        <tr><th>Quantity of Bundles</th><th>CDS Multiplier</th><th>Total AI Hours</th><th>Total CDS</th></tr>
+        <tr><th>Quantity of Bundles</th><th>CDS Multiplier</th><th>Total AI Units</th><th>= Real-time hrs</th><th>or Post-call hrs</th><th>Total CDS</th></tr>
       </thead>
       <tbody id="refTable"></tbody>
     </table>
@@ -716,7 +732,7 @@ function renderStats(summary, recent) {
   document.getElementById('stat-customers').textContent = customers;
   document.getElementById('stat-license').textContent   = licenseCount;
   document.getElementById('stat-boost').textContent     = boostCount;
-  document.getElementById('stat-overage').textContent   = avgOver !== '—' ? avgOver + 'h' : '—';
+  document.getElementById('stat-overage').textContent   = avgOver !== '—' ? avgOver + ' units' : '—';
   document.getElementById('stat-last').textContent      = lastAlert;
 }
 
@@ -742,7 +758,7 @@ function renderTable(rows) {
       usageHtml = `<div class="usage-bar-wrap">
         <div class="usage-bar"><div class="usage-fill ${cls}" style="width:${Math.min(pct,100)}%"></div></div>
         <span class="usage-pct">${pct}%</span>
-      </div><div style="font-size:11px;color:var(--muted);margin-top:3px">${r.ai_hours_used}h of ${r.ai_hours_total}h</div>`;
+      </div><div style="font-size:11px;color:var(--muted);margin-top:3px">${r.ai_hours_used} of ${r.ai_hours_total} units</div>`;
     } else if (r.alert_type === 'license_overuse' && r.license_used != null && r.license_available != null) {
       const pct = r.license_available > 0 ? Math.round((r.license_used / r.license_available) * 100) : 100;
       const cls = pct >= 100 ? 'danger' : 'warn';
@@ -792,8 +808,8 @@ function openDetail(pbx) {
   if (row.alert_type === 'ai_boost') {
     const pct = row.ai_hours_total ? Math.round((row.ai_hours_used / row.ai_hours_total)*100) : 0;
     const overCls = row.ai_hours_overage ? 'danger' : 'ok';
-    metrics += metricCard('AI hours used', `${row.ai_hours_used || '—'}h`, `of ${row.ai_hours_total}h total`, pct >= 100 ? 'danger' : 'warn');
-    metrics += metricCard('AI overage', row.ai_hours_overage ? `+${row.ai_hours_overage}h` : 'None', 'over allowance', overCls);
+    metrics += metricCard('AI units used', `${row.ai_hours_used || '—'}`, `of ${row.ai_hours_total} units total`, pct >= 100 ? 'danger' : 'warn');
+    metrics += metricCard('AI overage', row.ai_hours_overage ? `+${row.ai_hours_overage} units` : 'None', 'over allowance', overCls);
     metrics += metricCard('Bundles', `${row.bundles_before} → ${row.bundles_after}`, 'auto-increased', 'boost');
     metrics += metricCard('CDS storage', `${row.cds_used_gb || '—'} GB`, `of ${row.cds_total_gb || '—'} GB`, 'ok');
   } else if (row.alert_type === 'license_overuse') {
@@ -815,8 +831,8 @@ function openDetail(pbx) {
       if (h.alert_type === 'license_overuse') {
         desc = `License overuse — ${h.license_type}: ${h.license_used} used / ${h.license_available} available`;
       } else if (h.alert_type === 'ai_boost') {
-        desc = `AI boost auto-added — bundles ${h.bundles_before}→${h.bundles_after}, AI hours ${h.ai_hours_used}h of ${h.ai_hours_total}h`;
-        if (h.ai_hours_overage) desc += ` (+${h.ai_hours_overage}h over)`;
+        desc = `AI boost auto-added — bundles ${h.bundles_before}→${h.bundles_after}, AI units ${h.ai_hours_used} of ${h.ai_hours_total}`;
+        if (h.ai_hours_overage) desc += ` (+${h.ai_hours_overage} units over)`;
       }
       return `<div class="history-item">
         <div class="history-dot ${h.alert_type}"></div>
@@ -873,19 +889,28 @@ function switchView(name) {
 }
 
 // ── Bundle calculator ───────────────────────────────────────
-// Rules per AI+Data Boost Bundle Overview (effective 1 Mar 2026):
-//   Default (no Bundle): 10 AI hours + 5GB CDS
-//   1 Bundle:  25 AI hours + 10GB CDS
+// Rules per AI+Data Boost Bundle Overview (bundles effective 1 Mar 2026;
+// real-time vs post-call unit rates from WMS 7.08.20260625.1):
+//   AI units: real-time (live transcription, Voice AI agents, voicemail) = 1 unit/hour
+//             post-call transcription (calls only)                     = 0.5 unit/hour
+//   Default (no Bundle): 10 AI units + 5GB CDS
+//   Each Bundle: 25 AI units + 10GB CDS (default allowance not added on top)
 //   2–3 Bundles:  CDS = bundles * 10GB * 2.5
 //   4–10 Bundles: CDS = bundles * 10GB * 12.5
 //   11+ Bundles:  CDS = bundles * 10GB * 45
+const RT_RATE = 1;
+const PC_RATE = 0.5;
 (function () {
-  const hoursInput = document.getElementById('hoursInput');
-  const hoursSlider = document.getElementById('hoursSlider');
+  const rtInput = document.getElementById('rtInput');
+  const rtSlider = document.getElementById('rtSlider');
+  const pcInput = document.getElementById('pcInput');
+  const pcSlider = document.getElementById('pcSlider');
   const cdsToggle = document.getElementById('cdsToggle');
   const cdsField = document.getElementById('cdsField');
   const cdsInput = document.getElementById('cdsInput');
-  if (!hoursInput) return; // calculator markup not present
+  if (!rtInput) return; // calculator markup not present
+
+  const fmt = n => Number.isInteger(n) ? String(n) : n.toFixed(1);
 
   function cdsMultiplier(bundles) {
     if (bundles <= 0) return null;
@@ -898,13 +923,13 @@ function switchView(name) {
     if (bundles <= 0) return 5;
     return bundles * 10 * cdsMultiplier(bundles);
   }
-  function hoursForBundles(bundles) {
+  function unitsForBundles(bundles) {
     if (bundles <= 0) return 10;
     return bundles * 25;
   }
-  function bundlesForHours(hours) {
-    if (hours <= 10) return 0;
-    return Math.ceil(hours / 25);
+  function bundlesForUnits(units) {
+    if (units <= 10) return 0;
+    return Math.ceil(units / 25);
   }
   function bundlesForCDS(gb) {
     if (gb <= 5) return 0;
@@ -914,37 +939,55 @@ function switchView(name) {
   }
 
   function renderCalc() {
-    const hoursNeeded = Math.max(0, parseFloat(hoursInput.value) || 0);
+    const rtHours = Math.max(0, parseFloat(rtInput.value) || 0);
+    const pcHours = Math.max(0, parseFloat(pcInput.value) || 0);
+    const units = rtHours * RT_RATE + pcHours * PC_RATE;
     const cdsNeeded = cdsToggle.checked ? Math.max(0, parseFloat(cdsInput.value) || 0) : 0;
 
-    const byHours = bundlesForHours(hoursNeeded);
+    const byUnits = bundlesForUnits(units);
     const byCds = cdsToggle.checked ? bundlesForCDS(cdsNeeded) : 0;
-    const bundles = Math.max(byHours, byCds);
+    const bundles = Math.max(byUnits, byCds);
 
     document.getElementById('bundleCount').textContent = bundles;
 
-    const totalHours = hoursForBundles(bundles);
+    const totalUnits = unitsForBundles(bundles);
     const totalCds = cdsForBundles(bundles);
     const mult = cdsMultiplier(bundles);
 
-    document.getElementById('hoursProvided').textContent = totalHours + 'h';
-    document.getElementById('cdsProvided').textContent = (Number.isInteger(totalCds) ? totalCds : totalCds.toFixed(1)) + ' GB';
+    document.getElementById('unitsNeeded').textContent = fmt(units);
+    document.getElementById('hoursProvided').textContent = totalUnits;
+    document.getElementById('cdsProvided').textContent = fmt(totalCds) + ' GB';
     document.getElementById('multiplierUsed').textContent = mult ? mult + 'x' : '—';
 
+    const usage = `${fmt(rtHours)}h real-time + ${fmt(pcHours)}h post-call = ${fmt(units)} AI units/month`;
     let sub = '';
-    let noteHTML = '';
+    let notes = [];
     if (bundles === 0) {
-      sub = `${hoursNeeded}h/month fits within the free allowance — no Bundle required.`;
-      noteHTML = `<div class="calc-note included">✓ Covered by the default allowance (10 AI hours + 5GB CDS). No purchase needed.</div>`;
+      sub = `${usage} — fits within the free allowance, no Bundle required.`;
+      notes.push(`<div class="calc-note included">✓ Covered by the default allowance (10 AI units + 5GB CDS). No purchase needed.</div>`);
     } else {
-      sub = `${hoursNeeded}h/month requires ${bundles} Bundle${bundles > 1 ? 's' : ''}` +
-        (cdsToggle.checked && byCds > byHours ? ` (driven by the ${cdsNeeded}GB storage requirement, not hours)` : '') + '.';
-      if (byCds > byHours && cdsToggle.checked) {
-        noteHTML = `<div class="calc-note">Storage requirement (${cdsNeeded}GB) needs more Bundles than the hours alone would — quoted on the higher figure.</div>`;
+      sub = `${usage} — requires ${bundles} Bundle${bundles > 1 ? 's' : ''}` +
+        (cdsToggle.checked && byCds > byUnits ? ` (driven by the ${cdsNeeded}GB storage requirement, not AI units)` : '') + '.';
+      if (byCds > byUnits && cdsToggle.checked) {
+        notes.push(`<div class="calc-note">Storage requirement (${cdsNeeded}GB) needs more Bundles than the AI units alone would — quoted on the higher figure.</div>`);
       }
     }
+
+    // Sales comparison: what the same call hours would need if transcribed live
+    if (pcHours > 0) {
+      const allLiveUnits = rtHours + pcHours;
+      const allLiveBundles = Math.max(bundlesForUnits(allLiveUnits), byCds);
+      if (allLiveBundles > bundles) {
+        notes.push(`<div class="calc-note included">💡 Using post-call for ${fmt(pcHours)}h saves ${fmt(pcHours * (RT_RATE - PC_RATE))} AI units. If those calls were transcribed live it would need ${allLiveBundles} Bundle${allLiveBundles > 1 ? 's' : ''} instead of ${bundles}.</div>`);
+      }
+    }
+    const spare = totalUnits - units;
+    if (spare > 0 && bundles > 0) {
+      notes.push(`<div class="calc-note included">Headroom: ${fmt(spare)} spare AI units ≈ ${fmt(spare)}h more real-time or ${fmt(spare / PC_RATE)}h more post-call.</div>`);
+    }
+
     document.getElementById('resultSub').textContent = sub;
-    document.getElementById('noteBox').innerHTML = noteHTML;
+    document.getElementById('noteBox').innerHTML = notes.join('');
 
     buildRefTable(bundles);
   }
@@ -954,21 +997,25 @@ function switchView(name) {
     const tbody = document.getElementById('refTable');
     tbody.innerHTML = rows.map(b => {
       const mult = cdsMultiplier(b);
-      const hrs = hoursForBundles(b);
+      const u = unitsForBundles(b);
       const cds = cdsForBundles(b);
       const isActive = b === activeBundles;
       const label = b === 0 ? 'No Bundle (default)' : b;
       return `<tr class="${isActive ? 'active-tier' : ''}">
         <td>${label}</td>
         <td>${mult ? mult + 'x' : '—'}</td>
-        <td>${hrs}h</td>
-        <td>${Number.isInteger(cds) ? cds : cds.toFixed(1)} GB</td>
+        <td>${u}</td>
+        <td>${fmt(u / RT_RATE)}h</td>
+        <td>${fmt(u / PC_RATE)}h</td>
+        <td>${fmt(cds)} GB</td>
       </tr>`;
     }).join('');
   }
 
-  hoursInput.addEventListener('input', () => { hoursSlider.value = hoursInput.value; renderCalc(); });
-  hoursSlider.addEventListener('input', () => { hoursInput.value = hoursSlider.value; renderCalc(); });
+  rtInput.addEventListener('input', () => { rtSlider.value = rtInput.value; renderCalc(); });
+  rtSlider.addEventListener('input', () => { rtInput.value = rtSlider.value; renderCalc(); });
+  pcInput.addEventListener('input', () => { pcSlider.value = pcInput.value; renderCalc(); });
+  pcSlider.addEventListener('input', () => { pcInput.value = pcSlider.value; renderCalc(); });
   cdsToggle.addEventListener('change', () => {
     cdsField.style.display = cdsToggle.checked ? 'block' : 'none';
     renderCalc();
